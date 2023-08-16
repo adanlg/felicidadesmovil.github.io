@@ -20,7 +20,8 @@
     width: 50px;
     height: 80px;
     left: 50%;
-    bottom: 0;
+    transform: translateX(-50%);
+    bottom: 5%; /* Posicionado 5% más arriba */
     background-image: url('image1.png');
     background-size: contain;
     background-repeat: no-repeat;
@@ -34,30 +35,23 @@
     background-repeat: no-repeat;
     transform-origin: center bottom;
   }
-  .player-hitbox {
-    position: absolute;
-    width: 50px; /* Ancho del hitbox del jugador */
-    height: 80px; /* Alto del hitbox del jugador */
-  }
 </style>
 </head>
 <body>
 <div id="game-container">
   <div id="player"></div>
-  <div class="player-hitbox"></div> <!-- Agregamos el hitbox del jugador -->
   <div id="score">Score: 0</div>
 </div>
 <script>
   const player = document.getElementById('player');
-  const playerHitbox = document.querySelector('.player-hitbox'); // Elemento del hitbox del jugador
   const gameContainer = document.getElementById('game-container');
   const scoreElement = document.getElementById('score');
 
-  let playerX = gameContainer.clientWidth / 2 - player.clientWidth / 2;
+  const originalPlayerX = gameContainer.clientWidth / 2 - player.clientWidth / 2; // Posición original del jugador
   const playerSpeed = 5;
+  let playerX = originalPlayerX;
 
   player.style.left = `${playerX}px`;
-  playerHitbox.style.left = `${playerX}px`; // Posicionamos el hitbox del jugador igual que al jugador
 
   let score = 0;
   let consecutiveAvoided = 0;
@@ -76,71 +70,61 @@
     }
     
     player.style.left = `${playerX}px`;
-    playerHitbox.style.left = `${playerX}px`; // Actualizamos la posición del hitbox del jugador
   });
 
-  player.addEventListener('touchstart', (event) => {
-    touchStartX = event.touches[0].clientX;
-    isTouching = true;
-  });
-
-  player.addEventListener('touchmove', (event) => {
-    if (!isTouching) return;
-    touchMoveX = event.touches[0].clientX - touchStartX;
-    playerX += touchMoveX;
-    
-    if (playerX < 0) {
-      playerX = 0;
-    } else if (playerX > gameContainer.clientWidth - player.clientWidth) {
-      playerX = gameContainer.clientWidth - player.clientWidth;
-    }
-    
+  function resetGame() {
+    playerX = originalPlayerX; // Reseteamos la posición del jugador
     player.style.left = `${playerX}px`;
-    touchStartX = event.touches[0].clientX;
-  });
-
-  player.addEventListener('touchend', () => {
-    isTouching = false;
-  });
-
-  setInterval(() => {
-    const obstacle = document.createElement('div');
-    obstacle.classList.add('obstacle');
-    const randomX = Math.random() * (gameContainer.clientWidth - 20); // Nuevo tamaño del obstáculo
-    obstacle.style.left = `${randomX}px`;
-    gameContainer.appendChild(obstacle);
-
-    const fallSpeed = 2;
-
-    const fallInterval = setInterval(() => {
-      const obstacleTop = obstacle.offsetTop + fallSpeed;
-      obstacle.style.top = `${obstacleTop}px`;
-
-      if (obstacleTop > gameContainer.clientHeight) {
-        clearInterval(fallInterval);
-        gameContainer.removeChild(obstacle);
-      }
-
-      if (
-        obstacleTop + obstacle.clientHeight > gameContainer.clientHeight - player.clientHeight &&
-        obstacleTop < gameContainer.clientHeight - player.clientHeight + player.clientHeight / 2 &&
-        obstacle.offsetLeft + obstacle.clientWidth > playerX &&
-        obstacle.offsetLeft < playerX + player.clientWidth
-      ) {
-        alert('Game Over: Has caído en la tentación, es normal, yo también lo haría');
-        location.reload();
-      }
-    }, 16);
-
-    score++;
+    score = 0;
     consecutiveAvoided = 0;
     scoreElement.textContent = `Score: ${score}`;
+    gameContainer.innerHTML = ''; // Eliminamos todos los obstáculos
+    startGame(); // Llamamos a la función para comenzar el juego
+  }
 
-    if (score === 23) {
-      alert('Felicidades, has conseguido respetar a Salma');
-      location.reload();
-    }
-  }, 1000);
+  function startGame() {
+    setInterval(() => {
+      const obstacle = document.createElement('div');
+      obstacle.classList.add('obstacle');
+      const randomX = Math.random() * (gameContainer.clientWidth - 20); // Nuevo tamaño del obstáculo
+      obstacle.style.left = `${randomX}px`;
+      gameContainer.appendChild(obstacle);
+
+      const fallSpeed = 2;
+
+      const fallInterval = setInterval(() => {
+        const obstacleTop = obstacle.offsetTop + fallSpeed;
+        obstacle.style.top = `${obstacleTop}px`;
+
+        if (obstacleTop > gameContainer.clientHeight) {
+          clearInterval(fallInterval);
+          gameContainer.removeChild(obstacle);
+        }
+
+        if (
+          obstacleTop + obstacle.clientHeight > gameContainer.clientHeight - player.clientHeight &&
+          obstacleTop < gameContainer.clientHeight - player.clientHeight + player.clientHeight / 2 &&
+          obstacle.offsetLeft + obstacle.clientWidth > playerX &&
+          obstacle.offsetLeft < playerX + player.clientWidth
+        ) {
+          alert('Game Over: Has caído en la tentación, es normal, yo también lo haría');
+          resetGame(); // Reiniciamos el juego después de "Game Over"
+        }
+      }, 16);
+
+      score++;
+      consecutiveAvoided = 0;
+      scoreElement.textContent = `Score: ${score}`;
+
+      if (score === 23) {
+        alert('Felicidades, has conseguido respetar a Salma');
+        resetGame(); // Reiniciamos el juego después de ganar
+      }
+    }, 1000);
+  }
+
+  startGame(); // Llamamos a la función para comenzar el juego
+
 </script>
 </body>
 </html>
